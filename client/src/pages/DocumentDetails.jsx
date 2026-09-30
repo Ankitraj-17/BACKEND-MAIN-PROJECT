@@ -63,15 +63,15 @@ const DocumentDetails = () => {
     });
 
     try {
-      const fileId = file._id || index;
+      const fileId = file._id != null ? file._id : index;
       const response = await api.get(`/documents/${id}/files/${fileId}`, {
         responseType: 'blob'
       });
       const blobType = file.mimeType || response.headers['content-type'] || 'application/octet-stream';
       const blob = new Blob([response.data], { type: blobType });
       const objectUrl = URL.createObjectURL(blob);
-      const isImage = blobType.startsWith('image/');
-      const isPdf = blobType === 'application/pdf';
+      const isImage = blobType.startsWith('image/') || /\.(png|jpe?g|webp|gif|svg)$/i.test(file.originalName || '');
+      const isPdf = blobType === 'application/pdf' || /\.pdf$/i.test(file.originalName || '');
 
       setPreviewFile({
         name: file.originalName || 'File Preview',
@@ -84,7 +84,17 @@ const DocumentDetails = () => {
         index
       });
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to load file preview.');
+      let message = 'Failed to load file preview.';
+      if (err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          const json = JSON.parse(text);
+          if (json.message) message = json.message;
+        } catch (_) {}
+      } else if (err.response?.data?.message) {
+        message = err.response.data.message;
+      }
+      alert(message);
       setShowPreviewModal(false);
       setPreviewFile(null);
     }
@@ -101,7 +111,7 @@ const DocumentDetails = () => {
   // Handle authenticated file Download
   const handleDownloadFile = async (file, index) => {
     try {
-      const fileId = file._id || index;
+      const fileId = file._id != null ? file._id : index;
       const response = await api.get(`/documents/${id}/files/${fileId}?download=true`, {
         responseType: 'blob'
       });
@@ -118,7 +128,17 @@ const DocumentDetails = () => {
       }
       setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to download file.');
+      let message = 'Failed to download file.';
+      if (err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          const json = JSON.parse(text);
+          if (json.message) message = json.message;
+        } catch (_) {}
+      } else if (err.response?.data?.message) {
+        message = err.response.data.message;
+      }
+      alert(message);
     }
   };
 

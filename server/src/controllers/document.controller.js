@@ -257,15 +257,49 @@ exports.getFile = async (req, res, next) => {
       }
     }
 
+    if (!targetFile && Array.isArray(document.filePaths) && document.filePaths.length > 0) {
+      const idx = !isNaN(Number(fileId)) ? parseInt(fileId, 10) : 0;
+      const rawPath = document.filePaths[idx] || document.filePaths[0];
+      if (rawPath) {
+        const rawName = path.basename(rawPath);
+        const ext = path.extname(rawName).toLowerCase();
+        const mimeMap = {
+          '.png': 'image/png',
+          '.jpg': 'image/jpeg',
+          '.jpeg': 'image/jpeg',
+          '.webp': 'image/webp',
+          '.gif': 'image/gif',
+          '.pdf': 'application/pdf',
+          '.txt': 'text/plain'
+        };
+        targetFile = {
+          fileName: rawName,
+          filePath: rawPath,
+          originalName: rawName,
+          mimeType: mimeMap[ext] || 'application/octet-stream'
+        };
+      }
+    }
+
     if (!targetFile) {
       return res.status(404).json({ success: false, message: 'File not found in this document' });
     }
 
+    const safeFilename = path.basename(targetFile.fileName || targetFile.filePath || '');
     const uploadBaseDir = path.resolve(process.env.UPLOAD_PATH || 'uploads');
-    const safeFilename = path.basename(targetFile.fileName || targetFile.filePath);
-    const absoluteFilePath = path.join(uploadBaseDir, safeFilename);
 
-    if (!fs.existsSync(absoluteFilePath)) {
+    const candidatePaths = [
+      path.join(uploadBaseDir, safeFilename),
+      path.resolve(__dirname, '../../uploads', safeFilename),
+      path.resolve(process.cwd(), 'uploads', safeFilename),
+      path.resolve(process.cwd(), 'server/uploads', safeFilename),
+      targetFile.filePath ? path.resolve(targetFile.filePath) : null,
+      targetFile.filePath ? path.resolve(__dirname, '../..', targetFile.filePath) : null
+    ].filter(Boolean);
+
+    const absoluteFilePath = candidatePaths.find((p) => fs.existsSync(p));
+
+    if (!absoluteFilePath) {
       return res.status(404).json({ success: false, message: 'File does not exist on disk' });
     }
 
