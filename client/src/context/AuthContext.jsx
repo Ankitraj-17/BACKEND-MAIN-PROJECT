@@ -9,15 +9,17 @@ export const AuthProvider = ({ children }) => {
     return savedUser ? JSON.parse(savedUser) : null;
   });
   const [token, setToken] = useState(() => localStorage.getItem('dms_token'));
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !!localStorage.getItem('dms_token'));
 
-  // Validate token with backend on mount
+  // Validate token with backend on 
+  
+    const [loading, setLoading] = useState(() => !!localStorage.getItem(mount
   useEffect(() => {
     const checkAuth = async () => {
       const storedToken = localStorage.getItem('dms_token');
       if (storedToken) {
         try {
-          const res = await api.get('/auth/me');
+          const res = await api.get('/auth/me', { timeout: 8000 });
           if (res.data.success) {
             setUser(res.data.user);
             localStorage.setItem('dms_user', JSON.stringify(res.data.user));

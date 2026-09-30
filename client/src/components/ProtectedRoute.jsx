@@ -8,8 +8,13 @@ const ProtectedRoute = ({ children, requireAdmin = false }) => {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-        <p style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Authenticating session...</p>
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', gap: '14px' }}>
+        <div className="spinner-border text-success" role="status" style={{ width: '2rem', height: '2rem' }}>
+          <span className="visually-hidden">Loading...</span>
+        </div>
+        <p style={{ color: 'var(--muted)', fontSize: '0.9rem', fontWeight: 500, margin: 0 }}>
+          Authenticating session...
+        </p>
       </div>
     );
   }
