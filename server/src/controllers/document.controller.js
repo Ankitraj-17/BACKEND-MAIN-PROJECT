@@ -38,13 +38,25 @@ exports.uploadDocument = async (req, res, next) => {
       });
     }
 
-    const filesMetadata = req.files.map((file) => ({
-      fileName: file.filename,
-      originalName: Buffer.from(file.originalname, 'latin1').toString('utf8'),
-      filePath: `uploads/${file.filename}`,
-      mimeType: file.mimetype,
-      size: file.size
-    }));
+    const filesMetadata = req.files.map((file) => {
+      let fileBuffer = null;
+      try {
+        if (file.path && fs.existsSync(file.path)) {
+          fileBuffer = fs.readFileSync(file.path);
+        }
+      } catch (err) {
+        console.error('Failed to read file buffer for cloud persistence:', err);
+      }
+
+      return {
+        fileName: file.filename,
+        originalName: Buffer.from(file.originalname, 'latin1').toString('utf8'),
+        filePath: `uploads/${file.filename}`,
+        mimeType: file.mimetype,
+        size: file.size,
+        fileData: fileBuffer
+      };
+    });
 
     const document = await Document.create({
       title,
@@ -56,10 +68,9 @@ exports.uploadDocument = async (req, res, next) => {
       uploadDate: new Date()
     });
 
-    const populatedDoc = await Document.findById(document._id).populate(
-      'uploadedBy',
-      'name email department role'
-    );
+    const populatedDoc = await Document.findById(document._id)
+      .select('-files.fileData')
+      .populate('uploadedBy', 'name email department role');
 
     res.status(201).json({
       success: true,
@@ -95,6 +106,7 @@ exports.getDocuments = async (req, res, next) => {
     }
 
     const documents = await Document.find(queryObj)
+      .select('-files.fileData')
       .populate('uploadedBy', 'name email department role')
       .sort({ uploadDate: -1 });
 
@@ -111,10 +123,9 @@ exports.getDocuments = async (req, res, next) => {
 // Get single document by ID
 exports.getDocumentById = async (req, res, next) => {
   try {
-    const document = await Document.findById(req.params.id).populate(
-      'uploadedBy',
-      'name email department role'
-    );
+    const document = await Document.findById(req.params.id)
+      .select('-files.fileData')
+      .populate('uploadedBy', 'name email department role');
 
     if (!document) {
       return res.status(404).json({ success: false, message: 'Document not found' });
@@ -156,10 +167,9 @@ exports.updateDocument = async (req, res, next) => {
 
     await document.save();
 
-    const updatedDoc = await Document.findById(document._id).populate(
-      'uploadedBy',
-      'name email department role'
-    );
+    const updatedDoc = await Document.findById(document._id)
+      .select('-files.fileData')
+      .populate('uploadedBy', 'name email department role');
 
     res.status(200).json({
       success: true,
@@ -298,22 +308,53 @@ exports.getFile = async (req, res, next) => {
     ].filter(Boolean);
 
     const absoluteFilePath = candidatePaths.find((p) => fs.existsSync(p));
-
-    if (!absoluteFilePath) {
-      return res.status(404).json({ success: false, message: 'File does not exist on disk' });
-    }
-
     const originalName = targetFile.originalName || safeFilename;
 
-    if (req.query.download === 'true') {
-      return res.download(absoluteFilePath, originalName);
+    // 1. If physical file exists on disk, serve it directly
+    if (absoluteFilePath) {
+      if (req.query.download === 'true') {
+        return res.download(absoluteFilePath, originalName);
+      }
+
+      if (targetFile.mimeType) {
+        res.setHeader('Content-Type', targetFile.mimeType);
+      }
+      res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(originalName)}"`);
+      return res.sendFile(absoluteFilePath);
     }
 
-    if (targetFile.mimeType) {
-      res.setHeader('Content-Type', targetFile.mimeType);
+    // 2. If missing from disk (e.g. Render ephemeral container restart or redeploy),
+    // stream directly from the persistent MongoDB Atlas cloud buffer
+    if (targetFile.fileData) {
+      const buffer = Buffer.isBuffer(targetFile.fileData)
+        ? targetFile.fileData
+        : Buffer.from(targetFile.fileData);
+
+      // Re-cache to local disk if directory is writable
+      try {
+        if (!fs.existsSync(uploadBaseDir)) {
+          fs.mkdirSync(uploadBaseDir, { recursive: true });
+        }
+        const cachePath = path.join(uploadBaseDir, safeFilename);
+        if (!fs.existsSync(cachePath)) {
+          fs.writeFileSync(cachePath, buffer);
+        }
+      } catch (cacheErr) {}
+
+      if (targetFile.mimeType) {
+        res.setHeader('Content-Type', targetFile.mimeType);
+      }
+
+      const disposition = req.query.download === 'true' ? 'attachment' : 'inline';
+      res.setHeader('Content-Disposition', `${disposition}; filename="${encodeURIComponent(originalName)}"`);
+      res.setHeader('Content-Length', buffer.length);
+      return res.end(buffer);
     }
-    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(originalName)}"`);
-    return res.sendFile(absoluteFilePath);
+
+    return res.status(404).json({
+      success: false,
+      message: 'File does not exist on disk or cloud database. If this was uploaded prior to cloud persistence deployment, please re-upload the document.'
+    });
   } catch (error) {
     next(error);
   }

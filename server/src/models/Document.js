@@ -21,6 +21,9 @@ const fileItemSchema = new mongoose.Schema(
     size: {
       type: Number,
       required: true
+    },
+    fileData: {
+      type: Buffer
     }
   },
   { _id: false }
