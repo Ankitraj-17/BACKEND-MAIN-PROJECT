@@ -11,9 +11,7 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(() => localStorage.getItem('dms_token'));
   const [loading, setLoading] = useState(() => !!localStorage.getItem('dms_token'));
 
-  // Validate token with backend on 
-  
-    const [loading, setLoading] = useState(() => !!localStorage.getItem(mount
+  // Validate token with backend on mount
   useEffect(() => {
     const checkAuth = async () => {
       const storedToken = localStorage.getItem('dms_token');
