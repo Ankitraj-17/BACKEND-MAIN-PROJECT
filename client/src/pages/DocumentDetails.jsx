@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Row, Col, Spinner } from 'react-bootstrap';
+import { Row, Col, Spinner, Modal } from 'react-bootstrap';
 import { LuFileText, LuTrash2, LuPencil, LuExternalLink, LuDownload, LuArrowLeft } from 'react-icons/lu';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
@@ -18,6 +18,8 @@ const DocumentDetails = () => {
   const [error, setError] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [previewFile, setPreviewFile] = useState(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   // Fetch document details from backend API
   const fetchDoc = async () => {
@@ -49,8 +51,17 @@ const DocumentDetails = () => {
     }
   };
 
-  // Handle authenticated file View
+  // Handle authenticated file View with in-app modal preview
   const handleViewFile = async (file, index) => {
+    setShowPreviewModal(true);
+    setPreviewFile({
+      name: file.originalName || 'File Preview',
+      loading: true,
+      url: null,
+      rawFile: file,
+      index
+    });
+
     try {
       const fileId = file._id || index;
       const response = await api.get(`/documents/${id}/files/${fileId}`, {
@@ -59,11 +70,32 @@ const DocumentDetails = () => {
       const blobType = file.mimeType || response.headers['content-type'] || 'application/octet-stream';
       const blob = new Blob([response.data], { type: blobType });
       const objectUrl = URL.createObjectURL(blob);
-      window.open(objectUrl, '_blank');
-      setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+      const isImage = blobType.startsWith('image/');
+      const isPdf = blobType === 'application/pdf';
+
+      setPreviewFile({
+        name: file.originalName || 'File Preview',
+        loading: false,
+        url: objectUrl,
+        mimeType: blobType,
+        isImage,
+        isPdf,
+        rawFile: file,
+        index
+      });
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to open file.');
+      alert(err.response?.data?.message || 'Failed to load file preview.');
+      setShowPreviewModal(false);
+      setPreviewFile(null);
     }
+  };
+
+  const handleClosePreview = () => {
+    if (previewFile?.url) {
+      URL.revokeObjectURL(previewFile.url);
+    }
+    setShowPreviewModal(false);
+    setPreviewFile(null);
   };
 
   // Handle authenticated file Download
@@ -223,6 +255,102 @@ const DocumentDetails = () => {
         onHide={() => setShowDeleteModal(false)}
         onConfirm={handleDelete}
       />
+
+      {/* 4. In-App File Preview Modal */}
+      <Modal
+        show={showPreviewModal}
+        onHide={handleClosePreview}
+        size="lg"
+        centered
+        contentClassName="bg-dark text-light border-secondary"
+      >
+        <Modal.Header closeButton closeVariant="white" style={{ borderBottom: '1px solid var(--border)' }}>
+          <Modal.Title style={{ fontSize: '1rem', fontWeight: 600 }} className="text-truncate">
+            {previewFile?.name || 'File Preview'}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body
+          style={{
+            minHeight: '260px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#141619',
+            padding: '1.5rem'
+          }}
+        >
+          {previewFile?.loading ? (
+            <div className="text-center py-4">
+              <Spinner animation="border" variant="success" />
+              <p className="mt-2 mb-0" style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>
+                Loading preview...
+              </p>
+            </div>
+          ) : previewFile?.isImage ? (
+            <img
+              src={previewFile.url}
+              alt={previewFile.name}
+              style={{
+                maxWidth: '100%',
+                maxHeight: '65vh',
+                objectFit: 'contain',
+                borderRadius: '6px'
+              }}
+            />
+          ) : previewFile?.isPdf ? (
+            <iframe
+              src={previewFile.url}
+              title={previewFile.name}
+              style={{
+                width: '100%',
+                height: '65vh',
+                border: 'none',
+                borderRadius: '6px'
+              }}
+            />
+          ) : (
+            <div className="text-center py-4">
+              <LuFileText size={48} style={{ color: 'var(--muted)' }} className="mb-3" />
+              <p style={{ color: 'var(--text)', fontSize: '0.95rem', marginBottom: '1rem' }}>
+                In-browser preview is not supported for this file type.
+              </p>
+              <button
+                type="button"
+                className="btn-outline-custom mx-auto"
+                onClick={() => handleDownloadFile(previewFile.rawFile, previewFile.index)}
+              >
+                <LuDownload size={14} /> <span>Download to View</span>
+              </button>
+            </div>
+          )}
+        </Modal.Body>
+        {previewFile?.url && (
+          <Modal.Footer style={{ borderTop: '1px solid var(--border)' }}>
+            <a
+              href={previewFile.url}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-outline-custom text-decoration-none"
+            >
+              <LuExternalLink size={14} /> <span>Open in New Tab</span>
+            </a>
+            <button
+              type="button"
+              className="btn-outline-custom"
+              onClick={() => handleDownloadFile(previewFile.rawFile, previewFile.index)}
+            >
+              <LuDownload size={14} /> <span>Download</span>
+            </button>
+            <button
+              type="button"
+              className="btn-outline-custom"
+              onClick={handleClosePreview}
+            >
+              <span>Close</span>
+            </button>
+          </Modal.Footer>
+        )}
+      </Modal>
     </div>
   );
 };
