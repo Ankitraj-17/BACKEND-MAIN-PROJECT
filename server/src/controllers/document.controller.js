@@ -87,6 +87,13 @@ exports.getDocuments = async (req, res, next) => {
       queryObj.category = req.query.category;
     }
 
+    if (req.query.search) {
+      queryObj.$or = [
+        { title: { $regex: req.query.search, $options: 'i' } },
+        { description: { $regex: req.query.search, $options: 'i' } }
+      ];
+    }
+
     const documents = await Document.find(queryObj)
       .populate('uploadedBy', 'name email department role')
       .sort({ uploadDate: -1 });

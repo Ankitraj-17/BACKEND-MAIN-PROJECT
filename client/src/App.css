@@ -1,12 +1,1 @@
-/* Minimal layout helper */
-.app-container {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-.main-content {
-  flex: 1;
-  padding-top: 1.5rem;
-  padding-bottom: 3rem;
-}
+/* App-level utility styles */

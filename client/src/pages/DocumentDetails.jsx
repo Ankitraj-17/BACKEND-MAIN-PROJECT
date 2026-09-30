@@ -4,7 +4,7 @@ import { Row, Col, Spinner, Modal } from 'react-bootstrap';
 import { LuFileText, LuTrash2, LuPencil, LuExternalLink, LuDownload, LuArrowLeft } from 'react-icons/lu';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
-import CategoryTag from '../components/CategoryTag';
+import CategoryTag, { getCategoryMeta } from '../components/CategoryTag';
 import DeleteModal from '../components/DeleteModal';
 
 // Document Details page with 5/12 and 7/12 split layout
@@ -138,6 +138,7 @@ const DocumentDetails = () => {
   const isOwner = document.uploadedBy?._id === user?.id || document.uploadedBy === user?.id;
   const canManage = isOwner || isAdmin;
   const files = document.files?.length ? document.files : (document.filePaths || []).map((p) => ({ originalName: p.split('/').pop(), filePath: p }));
+  const catMeta = getCategoryMeta(document.category);
 
   return (
     <div>
@@ -217,7 +218,20 @@ const DocumentDetails = () => {
               {files.map((file, idx) => (
                 <div key={idx} className="file-row-item">
                   <div className="d-flex align-items-center gap-3 text-truncate">
-                    <div className="icon-tile-green">
+                    <div
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        minWidth: '36px',
+                        borderRadius: '8px',
+                        backgroundColor: catMeta.tint,
+                        color: catMeta.color,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                      }}
+                    >
                       <LuFileText size={18} />
                     </div>
                     <span className="text-truncate" style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text)' }}>
@@ -281,7 +295,7 @@ const DocumentDetails = () => {
         >
           {previewFile?.loading ? (
             <div className="text-center py-4">
-              <Spinner animation="border" variant="success" />
+              <Spinner animation="border" />
               <p className="mt-2 mb-0" style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>
                 Loading preview...
               </p>
