@@ -5,6 +5,13 @@ A production-ready Full-Stack Document Management System built with **Node.js, E
 
 ---
 
+## 🌐 Live Deployments
+
+- **Live Application (Frontend)**: [https://docuvault-portal.vercel.app](https://docuvault-portal.vercel.app)
+- **Live REST API (Backend)**: [https://docuvault-backend-fg1q.onrender.com](https://docuvault-backend-fg1q.onrender.com)
+- **API Health Check**: [https://docuvault-backend-fg1q.onrender.com/api/health](https://docuvault-backend-fg1q.onrender.com/api/health)
+
+
 ## 🚀 Key Features
 
 - **Multi-File Upload via Multer**: Employees can attach and upload multiple files (PDF, DOCX, PNG, JPG) simultaneously in a single submission.
