@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Environment Variables
+.env
+server/.env
+client/.env
+
+# Uploads (keep .gitkeep)
+server/uploads/*
+!server/uploads/.gitkeep
+
+# Build artifacts
+client/dist/
+
+# OS metadata
+.DS_Store

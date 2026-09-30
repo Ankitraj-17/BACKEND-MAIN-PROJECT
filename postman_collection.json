@@ -1,0 +1,301 @@
+{
+  "info": {
+    "_postman_id": "78d10b7a-5db0-410a-8bf8-d6bbbb01048b",
+    "name": "Document Management System API",
+    "description": "Postman & Thunder Client collection for testing the Document Management System REST API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5001/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "doc_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "file_id",
+      "value": "0",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "1. Register Employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\",\n  \"department\": \"Engineering\",\n  \"role\": \"employee\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "2. Register Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Admin User\",\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin12345\",\n  \"department\": \"HR\",\n  \"role\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "3. Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "4. Get Current User (Me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Documents",
+      "item": [
+        {
+          "name": "1. Upload Document (Multiple Files via Multer)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.document && jsonData.document._id) {",
+                  "    pm.collectionVariables.set('doc_id', jsonData.document._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title", "value": "Government ID Proof and Passport", "type": "text" },
+                { "key": "category", "value": "ID Proof", "type": "text" },
+                { "key": "description", "value": "Annual compliance verification documents", "type": "text" },
+                { "key": "files", "type": "file", "src": "" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/documents",
+              "host": ["{{base_url}}"],
+              "path": ["documents"]
+            }
+          }
+        },
+        {
+          "name": "2. Get Documents (Owner or Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/documents",
+              "host": ["{{base_url}}"],
+              "path": ["documents"]
+            }
+          }
+        },
+        {
+          "name": "3. Filter Documents by Category",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/documents?category=ID Proof",
+              "host": ["{{base_url}}"],
+              "path": ["documents"],
+              "query": [
+                { "key": "category", "value": "ID Proof" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "4. Search Documents",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/documents?search=Passport",
+              "host": ["{{base_url}}"],
+              "path": ["documents"],
+              "query": [
+                { "key": "search", "value": "Passport" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "5. Get Single Document by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/documents/{{doc_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["documents", "{{doc_id}}"]
+            }
+          }
+        },
+        {
+          "name": "6. View File Inline (Protected Stream)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/documents/{{doc_id}}/files/{{file_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["documents", "{{doc_id}}", "files", "{{file_id}}"]
+            }
+          }
+        },
+        {
+          "name": "7. Download File (Protected Attachment)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/documents/{{doc_id}}/files/{{file_id}}?download=true",
+              "host": ["{{base_url}}"],
+              "path": ["documents", "{{doc_id}}", "files", "{{file_id}}"],
+              "query": [
+                { "key": "download", "value": "true" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "8. Update Document Metadata",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated ID Proof Title\",\n  \"category\": \"ID Proof\",\n  \"description\": \"Updated description with latest expiry notes\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/documents/{{doc_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["documents", "{{doc_id}}"]
+            }
+          }
+        },
+        {
+          "name": "9. Delete Document (Owner or Admin Only)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/documents/{{doc_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["documents", "{{doc_id}}"]
+            }
+          }
+        },
+        {
+          "name": "10. Get Metrics & Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/documents/metrics/stats",
+              "host": ["{{base_url}}"],
+              "path": ["documents", "metrics", "stats"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
