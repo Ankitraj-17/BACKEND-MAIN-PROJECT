@@ -56,6 +56,22 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
+// Root Welcome & API Status
+app.get(['/', '/api'], (req, res) => {
+  res.status(200).json({
+    success: true,
+    service: 'DocuVault Enterprise REST API',
+    status: 'online',
+    version: '1.0.0',
+    frontend: 'https://docuvault-portal.vercel.app',
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth',
+      documents: '/api/documents'
+    }
+  });
+});
+
 // Routes
 app.use('/api/auth', require('./src/routes/auth.routes'));
 app.use('/api/documents', require('./src/routes/document.routes'));
