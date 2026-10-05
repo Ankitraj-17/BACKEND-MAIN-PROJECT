@@ -5,11 +5,15 @@ A production-ready Full-Stack Document Management System built with **Node.js, E
 
 ---
 
-## 🌐 Live Deployments
+## 🔗 Project Links
 
-- **Live Application (Frontend)**: [https://docuvault-portal.vercel.app](https://docuvault-portal.vercel.app)
-- **Live REST API (Backend)**: [https://docuvault-backend-fg1q.onrender.com](https://docuvault-backend-fg1q.onrender.com)
-- **API Health Check**: [https://docuvault-backend-fg1q.onrender.com/api/health](https://docuvault-backend-fg1q.onrender.com/api/health)
+| Resource | Description | URL |
+|---|---|---|
+| 🌐 **Live Website (Frontend)** | Vercel Deployment | [https://docuvault-portal.vercel.app](https://docuvault-portal.vercel.app) |
+| ⚙️ **Live Backend API** | Render Web Service | [https://docuvault-backend-fg1q.onrender.com](https://docuvault-backend-fg1q.onrender.com) |
+| 📦 **GitHub Repository** | Full Source Code | [https://github.com/Ankitraj-17/BACKEND-MAIN-PROJECT](https://github.com/Ankitraj-17/BACKEND-MAIN-PROJECT) |
+| 🩺 **API Health Check** | Server Status Endpoint | [https://docuvault-backend-fg1q.onrender.com/api/health](https://docuvault-backend-fg1q.onrender.com/api/health) |
+| 📑 **Academic Project Report** | Detailed Documentation | [PROJECT_REPORT.md](./PROJECT_REPORT.md) |
 
 
 ## 🚀 Key Features
@@ -176,7 +180,7 @@ Visit `http://localhost:5173` in your browser.
    - `NODE_ENV`: `production`
    - `CLIENT_URL`: `https://<your-frontend>.vercel.app` (supports comma-separated origins)
 
-> **Important Note:** On Render's free plan the disk is temporary, so uploaded files can be lost when the service restarts or redeploys.
+> **Persistence Highlight:** To overcome Render's free tier ephemeral filesystem, DocuVault implements hybrid storage. File buffers are persistently stored in MongoDB Atlas alongside Multer's local disk workflow, ensuring seamless file preview and download even across server restarts and container redeployments.
 
 ### 3. Frontend (Vercel)
 1. Connect your repository to [Vercel](https://vercel.com).
